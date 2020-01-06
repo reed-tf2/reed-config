@@ -11,6 +11,7 @@ Personal notes that I want bundled with my hosted config.
 ## Favorites
 
 https://gist.github.com/rufio-tf2/71bfbfbecdbefc076574c787adf117ba
+`Steam\userdata\<uuid>\7\remote`
 
 ## Jump Servers
 
