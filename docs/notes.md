@@ -16,3 +16,9 @@ https://gist.github.com/rufio-tf2/71bfbfbecdbefc076574c787adf117ba
 ## Jump Servers
 
 **Name color**: `#CF60B8`
+
+## Backup Full Config
+
+```
+host_writeconfig config_backup full
+```

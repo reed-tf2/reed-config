@@ -1,6 +1,10 @@
 # Key Modifiers
 
-There's a couple of things that need to be done for each key in order to wire it up so that it can be modified. Currently, these are the keys that are wired up:
+Add modifier keys capabilities to TF2. You can't normally bind an action to <kbd>SHIFT</kbd>+<kbd>MOUSE1</kbd>, for example. This lets you use modifier keys like that. Use keys like <kbd>SHIFT</kbd> or <kbd>ALT</kbd> - or anything - to enable key combinations.
+
+This framework organizes things by key. If you want to shift-modify a key, that key needs its own file. Then, that files needs to be wired in to this system.
+
+There's a couple of things that need to be done for each key in order to wire it up so that it can be modified. Currently, these are the keys that are wired up, and already have their own file (the ones that I use):
 
 - <kbd>ALT</kbd>
 - <kbd>DOWNARROW</kbd>
@@ -15,26 +19,14 @@ There's a couple of things that need to be done for each key in order to wire it
 - <kbd>MWHEELDOWN</kbd>
 - <kbd>MWHEELUP</kbd>
 
-You can change these existing keys or add new keys.
+You can change use these and/or add new ones.
 
-- [Removing a key](#removing-a-key)
 - [Changing a key](#changing-a-key)
 - [Adding a new key](#adding-a-new-key)
+- [Removing a key](#removing-a-key)
 - [Creating class-specific states](#create-class-specific-states)
 
 **Note**: This module depends on actions created in [`actions.cfg`](../../actions.cfg).
-
-## Removing a key
-
-I can imagine some of you have your own behavior for some of these keys, and you don't want my config messing with it. Let's pretend that I no longer want to shift-modify MOUSE1.
-
-The simplest way is to just disconnect the MOUSE1.cfg file. Go into [`keys/init.cfg`](./keys/init.cfg) and remove (or comment out) the MOUSE1 line:
-
-```
-exec scripts/key_modifiers/keys/MOUSE1  //  <-- Remove this line
-exec scripts/key_modifiers/keys/MOUSE2
-exec scripts/key_modifiers/keys/MOUSE3
-```
 
 You can delete the MOUSE1.cfg file, but if you think you might want to use it in the future I'd just leave it sitting there.
 
@@ -85,7 +77,7 @@ alias alertUberPopped "say_team Get excited, it's Uber time."
 
 ### A bug
 
-There's a known issue in Tf2 scripting where you don't want to use `bind` within an `alias`. I've tried it a few times, and I've gotten some bugs. To avoid it, I leave my shift modifier keys bound to an alias which has a `+/-` state. That's the `+MOUSE2_key` and `-MOUSE2_key` you see above in the shift modifier function.
+There's reportedly an issue in TF2 scripting with using `bind` inside of an `alias`. I've tried it a few times, and I've had mixed results. To avoid it, I leave my shift modifier keys bound to an alias which has a `+/-` state. That's the `+MOUSE2_key` and `-MOUSE2_key` you see above in the shift modifier function.
 
 When a key is bound to something without a `+/-` state, it just executes the thing that it's bound to. But when it's bound to something with a `+/-` state it fires the "`+`" action on keydown, and the "`-`" action on keyup. This is important for actions like `attack`, which continue until you let up the key.
 
@@ -105,28 +97,32 @@ alias -uberAndAlert "-attack2;"
 Next I put this action in the modifier function:
 
 ```
-//  shift_modifiers/index.cfg
+//  keys/MOUSE2.cfg
 alias shiftModifyKey_MOUSE2 "alias +MOUSE2_key +uberAndAlert; alias -MOUSE2_key -uberAndAlert;"  // <-- Now your action does have both states
 ```
 
 ## Adding a new key
 
+Here's an example of how to start modifying a new key that isn't currently in my list.
+
 Let's say I want to wire up `F1`. I want its unmodified state to fake an uber call, and I want its shift-modified state to just call "Incoming!".
 
 The point of a modifier is to give a key an additional state. Normally it performs a default action, but when I hold a "modifier key" it changes the key to perform a different action.
 
-I'll need to define and wire up both of these states.
+I'll need to define it's modified state -- what I want it to do while I'm holding Shift. Then, since it's a brand new file, I'll need to define its un-modified state -- what the key should do shift is **not** being pressed. Finally, I'll need to wire up both of these states.
 
-### Create new actions
+### 1. Create new actions
 
-I'd need to create a new action in [`actions.cfg`](../../actions.cfg):
+I'd want to create a new action in [`actions.cfg`](../../actions.cfg). This isn't strictly necessary, but by defining this once in `actions.cfg`, I can now use `alertUberReady` to use the Uber Ready voice line. The name `alertUberReady` tells me what it does, as opposed to its console command `voicemenu 1 7` which tells me how, rather than what. "What" is more useful to read in most cases, and it's also usually easier to remember.
+
+I stick this shortcut alias in my `actions.cfg` file, and use `alertUberReady` in the rest of the config to perform the action.
 
 ```
 //  actions.cfg
 alias alertUberReady "voicemenu 1 7;"
 ```
 
-### Create a new key file
+### 2. Create a new key file
 
 In the [`keys`](./keys) folder, create a new file called `F1.cfg`. It's going to need three things:
 
@@ -147,9 +143,9 @@ resetKey_F1
 bind F1 F1_key
 ```
 
-### Include the new reset function in `resetKeys.cfg`
+### 3. Include the new reset function in `resetKeys.cfg`
 
-When this file executes, it fires all of the `resetKey` functions. It's critical that I add my new function to this list.
+When this file executes, it fires all of the `resetKey` functions. It's critical that I add my new function to this list. I'll add it at the end of the list, but the order doesn't matter here.
 
 ```
 //  resetKeys.cfg
@@ -163,7 +159,7 @@ resetKey_MWHEELDOWN
 resetKey_F1  //  <-- Add this line
 ```
 
-### Include the new modifier function in `shiftModifiyKeys.cfg`
+### 4. Include the new modifier function in `shiftModifiyKeys.cfg`
 
 When this file executes, it fires all of the `shiftModify` functions. It's also critical that I add my new function to this list.
 
@@ -183,7 +179,7 @@ shiftModifyKey_F1  //  <-- Add this line
 
 For example, on Spy I use MOUSE4 to use the `lastdisguise` action, but on Pyro I use it to perform `detonatorJump`. On both I keep the shift-modified version of MOUSE4 the same which is to `sayGameIsHard`.
 
-In [`classes/pyro/key_modifiers.cfg`](../../classes/pyro/key_modifiers.cfg), first I create my new action. Then I create my new reset function. Finally I execute it the reset function, because I'm changing MOUSE4's _unmodified_ state. (If I were changing its modified state, I wouldn't initalize the function.)
+In [`classes/pyro/key_modifiers.cfg`](../../classes/pyro/key_modifiers.cfg), first I create my new action. Then I create my new reset function. Finally I execute it the reset function, because I'm changing MOUSE4's _unmodified_ state. If I were changing its modified state, I wouldn't initalize the function like this, because the initial state should be its unmodified state.
 
 ```
 //  pyro/key_modifiers.cfg
@@ -203,3 +199,13 @@ The Spy's [`key_modifier.cfg`](../../classes/spy/key_modifiers.cfg) is the same,
 Do you want to make ALT a modifier too? I put that in place a bit ago, but I ended up not liking it so I removed it. If you want ALT or some other key, [let me know](https://github.com/rufio-tf2/rufio-config/issues/new) and I'll help you out.
 
 I'm still working on improving this system. If you have ideas or suggestions, on how to improve it [let me know](https://github.com/rufio-tf2/rufio-config/issues/new).
+
+## Removing a key
+
+Let's pretend that I no longer want to shift-modify MOUSE1. The simplest way is to go into [`keys/init.cfg`](./keys/init.cfg) and remove (or comment out) the MOUSE1 line:
+
+```
+exec scripts/key_modifiers/keys/MOUSE1  //  <-- Remove this line
+exec scripts/key_modifiers/keys/MOUSE2
+exec scripts/key_modifiers/keys/MOUSE3
+```

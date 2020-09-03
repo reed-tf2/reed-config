@@ -1,3 +1,4 @@
+cfg/secrets/
 sound/
 
 // Defaults
@@ -9,9 +10,7 @@ config.cfg
 mapcycle*
 motd*
 mtp.cfg
-pure_server*
 replay_example.cfg
-server*
 settings.scr
 sfm*
 sixense*
